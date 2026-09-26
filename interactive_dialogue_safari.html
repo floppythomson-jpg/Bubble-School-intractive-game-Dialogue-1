@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diálogos Interactivos - Respect & Kindness Safari</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font: Fredoka -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        fredoka: ['Fredoka', 'sans-serif'],
+                    },
+                    colors: {
+                        safari: {
+                            gold: '#FFB800',
+                            purple: '#7C3AED',
+                            pink: '#EC4899',
+                            teal: '#14B8A6',
+                            blue: '#3B82F6',
+                            green: '#10B981',
+                            warm: '#FFFBEB'
+                        }
+                    },
+                    animation: {
+                        bounceSlow: 'bounce 2s infinite',
+                        pulseGlow: 'pulseGlow 2s infinite alternate',
+                        popIn: 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%': { boxShadow: '0 0 10px rgba(124, 58, 237, 0.3)' },
+                            '100%': { boxShadow: '0 0 25px rgba(124, 58, 237, 0.8)' },
+                        },
+                        popIn: {
+                            '0%': { transform: 'scale(0.8)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Fredoka', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .bg-pattern {
+            background-color: #4F46E5;
+            background-image: radial-gradient(#818CF8 1.5px, transparent 1.5px), radial-gradient(#818CF8 1.5px, #4F46E5 1.5px);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+        }
+
+        .custom-card-shadow {
+            box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-3d {
+            transition: all 0.12s ease;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.22);
+        }
+
+        .btn-3d:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.22);
+        }
+
+        .chat-bubble-left::before {
+            content: '';
+            position: absolute;
+            left: -12px;
+            top: 18px;
+            border-width: 8px 12px 8px 0;
+            border-style: solid;
+            border-color: transparent #ffffff transparent transparent;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-pattern min-h-screen text-slate-800 flex flex-col justify-between overflow-x-hidden antialiased">
+
+    <header class="w-full max-w-5xl mx-auto px-4 pt-4 pb-2 flex items-center justify-between z-20">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="showScreen('main-menu')">
+            <div class="bg-amber-400 p-2.5 sm:p-3 rounded-2xl shadow-lg transform -rotate-3 hover:rotate-0 transition">
+                <i class="fa-solid fa-heart-pulse text-2xl text-amber-950"></i>
+            </div>
+            <div>
+                <h1 class="text-xl sm:text-2xl font-bold text-white drop-shadow-md leading-tight">Dialogue Safari</h1>
+                <p class="text-xs text-amber-200 font-medium">Respect & Kindness Practice</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 sm:gap-3">
+            <!-- Respect Stars -->
+            <div class="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5 border-2 border-amber-300">
+                <i class="fa-solid fa-star text-amber-400 text-base sm:text-lg"></i>
+                <span id="star-count" class="font-bold text-sm sm:text-base text-amber-900">0</span>
+            </div>
+
+            <!-- Kindness Hearts -->
+            <div class="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5 border-2 border-pink-300">
+                <i class="fa-solid fa-heart text-pink-500 text-base sm:text-lg animate-pulse"></i>
+                <span id="heart-count" class="font-bold text-sm sm:text-base text-pink-900">0</span>
+            </div>
+
+            <!-- Audio Mute Toggle -->
+            <button id="sound-btn" onclick="toggleSound()" class="bg-white/90 backdrop-blur-md p-2 rounded-full shadow-md hover:bg-white text-slate-700 hover:text-purple-600 transition w-9 h-9 flex items-center justify-center">
+                <i id="sound-icon" class="fa-solid fa-volume-high text-sm"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="w-full max-w-4xl mx-auto px-4 py-4 flex-grow flex items-center justify-center">
+
+        <!-- ================= SCREEN 1: MAIN MENU ================= -->
+        <div id="screen-main-menu" class="w-full flex flex-col items-center text-center space-y-6">
+            <div class="bg-white/95 backdrop-blur-md rounded-3xl p-6 sm:p-8 custom-card-shadow border-4 border-amber-300 max-w-2xl w-full">
+                <div class="inline-block bg-pink-100 text-pink-800 text-xs sm:text-sm font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
+                    <i class="fa-solid fa-comments mr-1"></i> Teatrito de Diálogos
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-indigo-950 mb-3">Practiquemos Respeto y Amabilidad</h2>
+                <p class="text-slate-600 text-sm sm:text-base font-medium">
+                    ¡Aprende a hablar en inglés con <span class="font-bold text-indigo-600">Floppy</span>, <span class="font-bold text-pink-600">Molly</span>, <span class="font-bold text-blue-600">Lucas</span>, <span class="font-bold text-amber-600">Tobby</span> y <span class="font-bold text-emerald-600">María</span>!
+                </p>
+
+                <!-- Avatar Preview -->
+                <div class="my-5 flex justify-center gap-3 sm:gap-6 text-3xl sm:text-4xl">
+                    <div class="flex flex-col items-center group cursor-pointer" onclick="playCharacterGreeting('Floppy')">
+                        <span class="p-2 bg-amber-100 rounded-2xl border-2 border-amber-300 group-hover:scale-110 transition">🐶</span>
+                        <span class="text-xs font-bold text-amber-800 mt-1">Floppy</span>
+                    </div>
+                    <div class="flex flex-col items-center group cursor-pointer" onclick="playCharacterGreeting('Molly')">
+                        <span class="p-2 bg-pink-100 rounded-2xl border-2 border-pink-300 group-hover:scale-110 transition">👧</span>
+                        <span class="text-xs font-bold text-pink-800 mt-1">Molly</span>
+                    </div>
+                    <div class="flex flex-col items-center group cursor-pointer" onclick="playCharacterGreeting('Lucas')">
+                        <span class="p-2 bg-blue-100 rounded-2xl border-2 border-blue-300 group-hover:scale-110 transition">👦</span>
+                        <span class="text-xs font-bold text-blue-800 mt-1">Lucas</span>
+                    </div>
+                    <div class="flex flex-col items-center group cursor-pointer" onclick="playCharacterGreeting('Tobby')">
+                        <span class="p-2 bg-amber-200 rounded-2xl border-2 border-amber-400 group-hover:scale-110 transition">🐕</span>
+                        <span class="text-xs font-bold text-amber-900 mt-1">Tobby</span>
+                    </div>
+                    <div class="flex flex-col items-center group cursor-pointer" onclick="playCharacterGreeting('María')">
+                        <span class="p-2 bg-emerald-100 rounded-2xl border-2 border-emerald-300 group-hover:scale-110 transition">👩</span>
+                        <span class="text-xs font-bold text-emerald-800 mt-1">María</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chapter Selection Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
+                <!-- Dialogue 1: Respect -->
+                <div onclick="startDialogue(1)" class="btn-3d bg-indigo-600 hover:bg-indigo-500 text-white p-5 rounded-3xl cursor-pointer flex flex-col justify-between border-b-4 border-indigo-800 text-left relative overflow-hidden group">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="bg-indigo-400/40 text-indigo-100 text-xs px-2.5 py-1 rounded-full font-bold">Diálogo 1</span>
+                        <i class="fa-solid fa-hand-holding-heart text-2xl text-amber-300 group-hover:scale-125 transition"></i>
+                    </div>
+                    <h3 class="text-xl font-bold">Respect! (El Respeto)</h3>
+                    <p class="text-xs text-indigo-200 mt-1 font-medium">Floppy, Lucas, Molly & la clase practican buenos modales.</p>
+                    <div class="mt-4 flex items-center gap-1 text-xs font-bold text-amber-300">
+                        <span>Iniciar Teatrito</span> <i class="fa-solid fa-circle-play ml-1 text-sm"></i>
+                    </div>
+                </div>
+
+                <!-- Dialogue 2: Kindness -->
+                <div onclick="startDialogue(2)" class="btn-3d bg-pink-600 hover:bg-pink-500 text-white p-5 rounded-3xl cursor-pointer flex flex-col justify-between border-b-4 border-pink-800 text-left relative overflow-hidden group">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="bg-pink-400/40 text-pink-100 text-xs px-2.5 py-1 rounded-full font-bold">Diálogo 2</span>
+                        <i class="fa-solid fa-face-smile-beam text-2xl text-amber-300 group-hover:scale-125 transition"></i>
+                    </div>
+                    <h3 class="text-xl font-bold">Kindness! (Amabilidad)</h3>
+                    <p class="text-xs text-pink-200 mt-1 font-medium">Tobby, Molly, María & ¡Tu turno de responder!</p>
+                    <div class="mt-4 flex items-center gap-1 text-xs font-bold text-amber-300">
+                        <span>Iniciar Teatrito</span> <i class="fa-solid fa-circle-play ml-1 text-sm"></i>
+                    </div>
+                </div>
+
+                <!-- Practice Quiz Mode -->
+                <div onclick="startQuizMode()" class="btn-3d bg-emerald-600 hover:bg-emerald-500 text-white p-5 rounded-3xl cursor-pointer flex flex-col justify-between border-b-4 border-emerald-800 text-left sm:col-span-2 group">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="bg-emerald-400/40 text-emerald-100 text-xs px-2.5 py-1 rounded-full font-bold">Desafío Rápido</span>
+                        <i class="fa-solid fa-puzzle-piece text-2xl text-yellow-300 group-hover:rotate-12 transition"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold">Completar la Frase Secreta</h3>
+                        <p class="text-xs text-emerald-100 font-medium">Pon a prueba tu memoria arrastrando o eligiendo la palabra que falta en los diálogos.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= SCREEN 2: INTERACTIVE THEATER ================= -->
+        <div id="screen-theater" class="hidden w-full max-w-3xl bg-white/95 backdrop-blur-md rounded-3xl p-4 sm:p-6 shadow-2xl border-4 border-amber-300 flex flex-col">
+            <!-- Header Bar -->
+            <div class="flex justify-between items-center pb-3 border-b border-slate-200 mb-4">
+                <button onclick="showScreen('main-menu')" class="text-slate-600 hover:text-slate-900 font-bold text-xs bg-slate-100 px-3 py-1.5 rounded-xl hover:bg-slate-200 transition flex items-center gap-1">
+                    <i class="fa-solid fa-arrow-left"></i> Menú
+                </button>
+                <div class="text-center">
+                    <span id="theater-title" class="text-base sm:text-lg font-extrabold text-indigo-950 block"></span>
+                    <span id="theater-step" class="text-xs font-bold text-pink-600">Línea 1 de 9</span>
+                </div>
+                <button onclick="repeatCurrentLineAudio()" class="text-amber-700 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1">
+                    <i class="fa-solid fa-volume-high"></i> Repetir
+                </button>
+            </div>
+
+            <!-- Main Stage / Characters Area -->
+            <div class="bg-amber-50/70 border-2 border-amber-200 rounded-2xl p-4 min-h-[220px] sm:min-h-[260px] flex flex-col justify-between relative shadow-inner mb-4 overflow-hidden">
+                <!-- Character Avatars Bar -->
+                <div id="stage-characters" class="flex justify-around items-end pt-2 pb-4">
+                    <!-- Dynamic Character Badges -->
+                </div>
+
+                <!-- Speech Bubble Display -->
+                <div id="chat-bubble-container" class="relative bg-white p-4 sm:p-5 rounded-2xl border-2 border-indigo-200 shadow-lg text-slate-800 animate-popIn">
+                    <div class="flex items-center justify-between mb-1">
+                        <span id="speaker-name" class="font-extrabold text-sm sm:text-base text-indigo-700 uppercase"></span>
+                        <span id="speaker-badge" class="text-xs px-2 py-0.5 rounded-full font-bold bg-indigo-100 text-indigo-800"></span>
+                    </div>
+                    <p id="speaker-text-en" class="text-xl sm:text-2xl font-extrabold text-slate-900 leading-snug tracking-wide"></p>
+                    <p id="speaker-text-es" class="text-xs sm:text-sm text-slate-500 font-medium mt-1 italic"></p>
+                </div>
+            </div>
+
+            <!-- "YOUR TURN" Interactive Action Box -->
+            <div id="your-turn-container" class="hidden bg-gradient-to-r from-pink-500 to-purple-600 p-4 sm:p-5 rounded-2xl text-white shadow-xl text-center mb-4 animate-bounceSlow">
+                <div class="inline-block bg-yellow-300 text-slate-900 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
+                    <i class="fa-solid fa-microphone mr-1"></i> ¡Es Tu Turno! (Your Turn)
+                </div>
+                <h4 class="text-lg sm:text-xl font-extrabold mb-3">¿Qué debes responder ahora?</h4>
+                <div id="your-turn-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Interactive choices injected here -->
+                </div>
+            </div>
+
+            <!-- Controls Footer -->
+            <div class="flex items-center justify-between gap-3 pt-2">
+                <button id="prev-line-btn" onclick="navigateDialogue(-1)" class="btn-3d bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm border-b-2 border-slate-400">
+                    <i class="fa-solid fa-chevron-left mr-1"></i> Anterior
+                </button>
+
+                <!-- Auto-Play Toggle -->
+                <button id="autoplay-btn" onclick="toggleAutoPlay()" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5">
+                    <i id="autoplay-icon" class="fa-solid fa-play"></i> Auto-Reproducir
+                </button>
+
+                <button id="next-line-btn" onclick="navigateDialogue(1)" class="btn-3d bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-5 py-2.5 rounded-xl text-xs sm:text-sm border-b-2 border-emerald-700">
+                    Siguiente <i class="fa-solid fa-chevron-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= SCREEN 3: QUIZ & WORD GAME ================= -->
+        <div id="screen-quiz" class="hidden w-full max-w-2xl bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-7 shadow-2xl border-4 border-emerald-300">
+            <div class="flex justify-between items-center mb-4">
+                <button onclick="showScreen('main-menu')" class="text-emerald-800 bg-emerald-100 hover:bg-emerald-200 px-3 py-1.5 rounded-xl text-xs font-bold">
+                    <i class="fa-solid fa-arrow-left"></i> Menú
+                </button>
+                <span id="quiz-step-text" class="text-xs font-bold bg-emerald-200 text-emerald-900 px-3 py-1 rounded-full">Reto 1 de 6</span>
+            </div>
+
+            <!-- Quiz Card -->
+            <div class="bg-emerald-50 rounded-2xl p-5 border-2 border-emerald-200 mb-5 text-center">
+                <span class="inline-block bg-emerald-200 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase mb-2">Completa la Frase</span>
+                <h3 id="quiz-sentence" class="text-xl sm:text-2xl font-extrabold text-slate-800 leading-snug"></h3>
+                <p id="quiz-translation" class="text-xs sm:text-sm text-slate-500 mt-2 font-medium italic"></p>
+            </div>
+
+            <!-- Answer Options -->
+            <div id="quiz-answers-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <!-- Buttons injected by JS -->
+            </div>
+
+            <!-- Feedback Alert -->
+            <div id="quiz-feedback-box" class="hidden p-3.5 rounded-2xl text-center font-bold text-sm sm:text-base animate-popIn"></div>
+
+            <div class="flex justify-end mt-4">
+                <button id="quiz-next-btn" onclick="nextQuizQuestion()" class="hidden btn-3d bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-6 py-2.5 rounded-xl text-sm border-b-2 border-emerald-700">
+                    Siguiente Frase <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= SCREEN 4: VICTORY & SUMMARY ================= -->
+        <div id="screen-victory" class="hidden w-full max-w-lg bg-white/95 backdrop-blur-md rounded-3xl p-6 sm:p-8 shadow-2xl text-center border-4 border-amber-300">
+            <div class="inline-block bg-amber-100 p-4 rounded-full text-4xl mb-3 text-amber-600 animate-bounce">
+                🌟
+            </div>
+            <h2 class="text-3xl font-extrabold text-slate-800 mb-1">¡Buen Trabajo! (Good Job!)</h2>
+            <p class="text-slate-600 text-sm mb-6">Has demostrado grandes modales y amabilidad hoy.</p>
+
+            <div class="bg-amber-50 rounded-2xl p-4 border border-amber-200 mb-6 flex justify-around items-center">
+                <div>
+                    <span class="block text-xs text-slate-500 font-bold uppercase">Estrellas de Respeto</span>
+                    <span id="final-stars" class="text-2xl font-extrabold text-amber-500">⭐ 0</span>
+                </div>
+                <div class="h-10 w-px bg-amber-200"></div>
+                <div>
+                    <span class="block text-xs text-slate-500 font-bold uppercase">Corazones de Amabilidad</span>
+                    <span id="final-hearts" class="text-2xl font-extrabold text-pink-500">💖 0</span>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <button onclick="startDialogue(1)" class="btn-3d w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-2xl border-b-4 border-indigo-800">
+                    <i class="fa-solid fa-rotate-right mr-1"></i> Repetir Diálogo 1 (Respect)
+                </button>
+                <button onclick="startDialogue(2)" class="btn-3d w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-3 rounded-2xl border-b-4 border-pink-800">
+                    <i class="fa-solid fa-rotate-right mr-1"></i> Repetir Diálogo 2 (Kindness)
+                </button>
+                <button onclick="showScreen('main-menu')" class="btn-3d w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-2xl border-b-4 border-slate-400">
+                    Volver al Menú Principal
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full text-center py-3 text-xs text-white/80 font-medium">
+        Safari de Diálogos &bull; Respeto y Amabilidad en Inglés para Niños
+    </footer>
+
+    <script>
+        // State variables
+        let starsCount = 0;
+        let heartsCount = 0;
+        let isMuted = false;
+        let isAutoPlay = false;
+        let autoPlayTimer = null;
+
+        let activeDialogueId = 1;
+        let currentLineIdx = 0;
+        let userHasAnsweredCurrentStep = false;
+
+        let quizIdx = 0;
+        let quizScore = 0;
+
+        // Character definitions with emojis, theme colors and voice pitch/rate settings
+        const characters = {
+            'Floppy': { emoji: '🐶', name: 'Floppy (Maestro)', color: 'bg-amber-500', textCol: 'text-amber-800', pitch: 1.2, rate: 0.9 },
+            'Students': { emoji: '👩‍🎓', name: 'Students (Clase)', color: 'bg-indigo-500', textCol: 'text-indigo-800', pitch: 1.4, rate: 0.95 },
+            'Lucas': { emoji: '👦', name: 'Lucas', color: 'bg-blue-500', textCol: 'text-blue-800', pitch: 1.1, rate: 0.9 },
+            'Molly': { emoji: '👧', name: 'Molly', color: 'bg-pink-500', textCol: 'text-pink-800', pitch: 1.3, rate: 0.9 },
+            'Tobby': { emoji: '🐕', name: 'Tobby', color: 'bg-amber-600', textCol: 'text-amber-900', pitch: 1.0, rate: 0.9 },
+            'María': { emoji: '👩', name: 'María', color: 'bg-emerald-500', textCol: 'text-emerald-800', pitch: 1.2, rate: 0.9 },
+            'You': { emoji: '⭐', name: '¡Tú Turno!', color: 'bg-purple-600', textCol: 'text-purple-800', pitch: 1.1, rate: 0.9 }
+        };
+
+        // Dialogue 1 Data (Respect)
+        const dialogue1Data = {
+            id: 1,
+            title: "Dialogue 1: Respect! (El Respeto)",
+            cast: ['Floppy', 'Lucas', 'Molly', 'Students'],
+            lines: [
+                { speaker: 'Floppy', en: "Hello, class!", es: "¡Hola, clase!", badge: "Saludo" },
+                { speaker: 'Students', en: "Hello, Floppy!", es: "¡Hola, Floppy!", badge: "Respuesta" },
+                { speaker: 'Floppy', en: "Today we have a new activity.", es: "Hoy tenemos una nueva actividad.", badge: "Anuncio" },
+                {
+                    speaker: 'Lucas',
+                    en: "Can Molly go first?",
+                    es: "¿Puede Molly ir primero?",
+                    badge: "Respeto",
+                    isInteractive: true,
+                    promptText: "¿Cómo pide Lucas el turno para Molly?",
+                    options: [
+                        { text: "Can Molly go first?", correct: true, feedback: "¡Exacto! Lucas cede el turno con cortesía. +1 Estrella ⭐" },
+                        { text: "I want to go first!", correct: false, feedback: "Recordemos pedir con cortesía." }
+                    ]
+                },
+                { speaker: 'Molly', en: "Thank you, Lucas.", es: "Gracias, Lucas.", badge: "Agradecimiento" },
+                { speaker: 'Floppy', en: "Good manners show respect.", es: "Los buenos modales muestran respeto.", badge: "Regla de Oro" },
+                { speaker: 'Lucas', en: "It's your turn, Molly!", es: "¡Es tu turno, Molly!", badge: "Compañerismo" },
+                { speaker: 'Molly', en: "Thank you!", es: "¡Muchas gracias!", badge: "Gratitud" },
+                { speaker: 'Floppy', en: "Excellent! Good job!", es: "¡Excelente! ¡Buen trabajo!", badge: "Felicitación" }
+            ]
+        };
+
+        // Dialogue 2 Data (Kindness)
+        const dialogue2Data = {
+            id: 2,
+            title: "Dialogue 2: Kindness! (La Amabilidad)",
+            cast: ['Tobby', 'Molly', 'María', 'You'],
+            lines: [
+                { speaker: 'Tobby', en: "Hello, Molly!", es: "¡Hola, Molly!", badge: "Saludo" },
+                { speaker: 'Molly', en: "Hi, Tobby!", es: "¡Hola, Tobby!", badge: "Saludo" },
+                { speaker: 'María', en: "What's your name?", es: "¿Cómo te llamas?", badge: "Pregunta" },
+                {
+                    speaker: 'You',
+                    en: "My name is Tobby.",
+                    es: "Mi nombre es Tobby.",
+                    badge: "Tu Turno",
+                    isInteractive: true,
+                    promptText: "Responde a María diciendo tu nombre:",
+                    options: [
+                        { text: "My name is Tobby.", correct: true, feedback: "¡Excelente! Te presentaste con amabilidad. +1 Corazón 💖" },
+                        { text: "No, bye!", correct: false, feedback: "Decir nuestro nombre es la mejor forma de responder." }
+                    ]
+                },
+                { speaker: 'María', en: "Nice to meet you!", es: "¡Mucho gusto en conocerte!", badge: "Amabilidad" },
+                { speaker: 'Molly', en: "Look! We are brother and sister.", es: "¡Mira! Somos hermano y hermana.", badge: "Familia" },
+                { speaker: 'María', en: "That's wonderful. Family is love.", es: "Eso es maravilloso. La familia es amor.", badge: "Amor" },
+                { speaker: 'Molly', en: "Do you want to play with us?", es: "¿Quieres jugar con nosotros?", badge: "Invitación" },
+                {
+                    speaker: 'You',
+                    en: "Yes, I do want to play with the ball with you guys!",
+                    es: "¡Sí, quiero jugar a la pelota con ustedes!",
+                    badge: "Tu Turno",
+                    isInteractive: true,
+                    promptText: "¡Te invitaron a jugar! Responde:",
+                    options: [
+                        { text: "Yes, I do want to play with the ball with you guys!", correct: true, feedback: "¡Súper! Aceptaste jugar en equipo. +1 Corazón 💖" },
+                        { text: "No, I don't want to.", correct: false, feedback: "¡Prueba la opción de jugar todos juntos!" }
+                    ]
+                },
+                { speaker: 'Tobby', en: "Let's play with the ball!", es: "¡Vamos a jugar a la pelota!", badge: "Juego" },
+                { speaker: 'You', en: "Yay!", es: "¡Súper! / ¡Yay!", badge: "Celebración" }
+            ]
+        };
+
+        // Quiz Questions Data based directly on sentences in dialogues
+        const quizQuestions = [
+            {
+                sentence: "Good manners show ______.",
+                translation: "Los buenos modales muestran ______.",
+                options: [
+                    { text: "respect", correct: true },
+                    { text: "noise", correct: false },
+                    { text: "sleep", correct: false }
+                ]
+            },
+            {
+                sentence: "Can Molly go ______?",
+                translation: "¿Puede Molly ir ______?",
+                options: [
+                    { text: "first", correct: true },
+                    { text: "home", correct: false },
+                    { text: "angry", correct: false }
+                ]
+            },
+            {
+                sentence: "Nice to ______ you!",
+                translation: "¡Mucho gusto en ______!",
+                options: [
+                    { text: "meet", correct: true },
+                    { text: "jump", correct: false },
+                    { text: "push", correct: false }
+                ]
+            },
+            {
+                sentence: "Family is ______.",
+                translation: "La familia es ______.",
+                options: [
+                    { text: "love", correct: true },
+                    { text: "toy", correct: false },
+                    { text: "sad", correct: false }
+                ]
+            },
+            {
+                sentence: "It's your ______, Molly!",
+                translation: "¡Es tu ______, Molly!",
+                options: [
+                    { text: "turn", correct: true },
+                    { text: "ball", correct: false },
+                    { text: "shoe", correct: false }
+                ]
+            },
+            {
+                sentence: "Let's play with the ______!",
+                translation: "¡Vamos a jugar con la ______!",
+                options: [
+                    { text: "ball", correct: true },
+                    { text: "pencil", correct: false },
+                    { text: "chair", correct: false }
+                ]
+            }
+        ];
+
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+        }
+
+        function playTone(type) {
+            if (isMuted) return;
+            try {
+                initAudio();
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'correct') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.1);
+                    osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.2);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.exponentialRampToValueAtTime(164.81, now + 0.25);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'heart') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(587.33, now); // D5
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.15); // A5
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'win') {
+                    [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => {
+                        const noteOsc = audioCtx.createOscillator();
+                        const noteGain = audioCtx.createGain();
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(audioCtx.destination);
+                        noteOsc.frequency.setValueAtTime(f, now + (i * 0.1));
+                        noteGain.gain.setValueAtTime(0.2, now + (i * 0.1));
+                        noteGain.gain.exponentialRampToValueAtTime(0.01, now + (i * 0.1) + 0.25);
+                        noteOsc.start(now + (i * 0.1));
+                        noteOsc.stop(now + (i * 0.1) + 0.25);
+                    });
+                }
+            } catch (e) {
+                console.log("Audio waiting for user interaction");
+            }
+        }
+
+        // Web Speech Synthesis for character voice reading
+        function speakText(text, speakerName) {
+            if (isMuted) return;
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Stop ongoing speech
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+
+                const charInfo = characters[speakerName] || characters['You'];
+                utterance.pitch = charInfo.pitch || 1.0;
+                utterance.rate = charInfo.rate || 0.9;
+
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function playCharacterGreeting(charName) {
+            const char = characters[charName];
+            if (char) {
+                playTone('correct');
+                speakText(`Hello! I am ${charName}. Let's practice respect!`, charName);
+            }
+        }
+
+        function toggleSound() {
+            isMuted = !isMuted;
+            const icon = document.getElementById('sound-icon');
+            if (isMuted) {
+                icon.className = 'fa-solid fa-volume-xmark text-red-500';
+                if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            } else {
+                icon.className = 'fa-solid fa-volume-high text-slate-700';
+                playTone('heart');
+            }
+        }
+
+        function showScreen(screenId) {
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            if (autoPlayTimer) clearInterval(autoPlayTimer);
+            isAutoPlay = false;
+            updateAutoPlayUI();
+
+            document.querySelectorAll('main > div').forEach(div => div.classList.add('hidden'));
+            document.getElementById(`screen-${screenId}`).classList.remove('hidden');
+        }
+
+        function addStars(num) {
+            starsCount += num;
+            document.getElementById('star-count').innerText = starsCount;
+            playTone('correct');
+        }
+
+        function addHearts(num) {
+            heartsCount += num;
+            document.getElementById('heart-count').innerText = heartsCount;
+            playTone('heart');
+        }
+
+        function startDialogue(dialogueNum) {
+            activeDialogueId = dialogueNum;
+            currentLineIdx = 0;
+            userHasAnsweredCurrentStep = false;
+
+            const dialogue = (dialogueNum === 1) ? dialogue1Data : dialogue2Data;
+            document.getElementById('theater-title').innerText = dialogue.title;
+
+            showScreen('theater');
+            renderDialogueStage();
+        }
+
+        function renderDialogueStage() {
+            const dialogue = (activeDialogueId === 1) ? dialogue1Data : dialogue2Data;
+            const line = dialogue.lines[currentLineIdx];
+
+            document.getElementById('theater-step').innerText = `Línea ${currentLineIdx + 1} de ${dialogue.lines.length}`;
+
+            // Render Stage Cast
+            const castContainer = document.getElementById('stage-characters');
+            castContainer.innerHTML = '';
+
+            dialogue.cast.forEach(charKey => {
+                const char = characters[charKey] || { emoji: '👤', name: charKey, color: 'bg-slate-400' };
+                const isSpeaking = (line.speaker === charKey);
+
+                const charWrap = document.createElement('div');
+                charWrap.className = `flex flex-col items-center transition-all duration-300 ${
+                    isSpeaking ? 'scale-125 z-10 -translate-y-2' : 'opacity-60 scale-95'
+                }`;
+
+                charWrap.innerHTML = `
+                    <div class="p-3 rounded-2xl ${char.color} text-white shadow-md text-3xl sm:text-4xl relative">
+                        ${char.emoji}
+                        ${isSpeaking ? '<span class="absolute -top-1 -right-1 flex h-3.5 w-3.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-yellow-400"></span></span>' : ''}
+                    </div>
+                    <span class="text-xs font-extrabold mt-1.5 ${isSpeaking ? 'text-indigo-950 font-black' : 'text-slate-500'}">${charKey}</span>
+                `;
+                castContainer.appendChild(charWrap);
+            });
+
+            // Update Speech Bubble Text
+            const speakerInfo = characters[line.speaker] || characters['You'];
+            document.getElementById('speaker-name').innerText = line.speaker;
+            document.getElementById('speaker-name').className = `font-extrabold text-sm sm:text-base uppercase ${speakerInfo.textCol}`;
+            document.getElementById('speaker-badge').innerText = line.badge;
+            document.getElementById('speaker-text-en').innerText = `"${line.en}"`;
+            document.getElementById('speaker-text-es').innerText = line.es;
+
+            // Handle "YOUR TURN" interactive choice box
+            const turnContainer = document.getElementById('your-turn-container');
+            const turnOptions = document.getElementById('your-turn-options');
+
+            if (line.isInteractive && !userHasAnsweredCurrentStep) {
+                turnContainer.classList.remove('hidden');
+                turnOptions.innerHTML = '';
+
+                line.options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-3d bg-white text-slate-800 hover:bg-yellow-100 font-extrabold p-3 sm:p-4 rounded-xl text-xs sm:text-sm text-left border-2 border-yellow-300 shadow-md flex items-center justify-between transition';
+                    btn.innerHTML = `<span>${opt.text}</span> <i class="fa-regular fa-circle-check text-yellow-500 text-base"></i>`;
+                    btn.onclick = () => handleUserTurnAnswer(opt, line);
+                    turnOptions.appendChild(btn);
+                });
+
+                document.getElementById('next-line-btn').disabled = true;
+                document.getElementById('next-line-btn').classList.add('opacity-50');
+            } else {
+                turnContainer.classList.add('hidden');
+                document.getElementById('next-line-btn').disabled = false;
+                document.getElementById('next-line-btn').classList.remove('opacity-50');
+
+                // Auto speak current character line
+                speakText(line.en, line.speaker);
+            }
+
+            // Button status
+            document.getElementById('prev-line-btn').disabled = (currentLineIdx === 0);
+        }
+
+        function handleUserTurnAnswer(selectedOption, lineData) {
+            userHasAnsweredCurrentStep = true;
+            const turnContainer = document.getElementById('your-turn-container');
+
+            if (selectedOption.correct) {
+                if (activeDialogueId === 1) addStars(1);
+                else addHearts(1);
+
+                speakText(selectedOption.text, 'You');
+
+                turnContainer.innerHTML = `
+                    <div class="bg-emerald-100 border-2 border-emerald-400 text-emerald-900 p-4 rounded-xl font-bold animate-popIn">
+                        <p class="text-base sm:text-lg mb-1">🎉 ${selectedOption.feedback}</p>
+                        <p class="text-xs text-emerald-700">¡Presiona "Siguiente" para continuar la conversación!</p>
+                    </div>
+                `;
+            } else {
+                playTone('wrong');
+                turnContainer.innerHTML += `
+                    <p class="text-xs text-yellow-100 font-bold mt-2">💡 ${selectedOption.feedback}</p>
+                `;
+                setTimeout(() => {
+                    userHasAnsweredCurrentStep = false;
+                    renderDialogueStage();
+                }, 1800);
+                return;
+            }
+
+            document.getElementById('next-line-btn').disabled = false;
+            document.getElementById('next-line-btn').classList.remove('opacity-50');
+        }
+
+        function navigateDialogue(dir) {
+            const dialogue = (activeDialogueId === 1) ? dialogue1Data : dialogue2Data;
+            userHasAnsweredCurrentStep = false;
+            currentLineIdx += dir;
+
+            if (currentLineIdx < 0) currentLineIdx = 0;
+
+            if (currentLineIdx >= dialogue.lines.length) {
+                finishDialogue();
+            } else {
+                renderDialogueStage();
+            }
+        }
+
+        function repeatCurrentLineAudio() {
+            const dialogue = (activeDialogueId === 1) ? dialogue1Data : dialogue2Data;
+            const line = dialogue.lines[currentLineIdx];
+            speakText(line.en, line.speaker);
+        }
+
+        function toggleAutoPlay() {
+            isAutoPlay = !isAutoPlay;
+            updateAutoPlayUI();
+
+            if (isAutoPlay) {
+                autoPlayTimer = setInterval(() => {
+                    const dialogue = (activeDialogueId === 1) ? dialogue1Data : dialogue2Data;
+                    const line = dialogue.lines[currentLineIdx];
+
+                    if (line.isInteractive && !userHasAnsweredCurrentStep) {
+                        // Pause auto-play during user choices
+                        clearInterval(autoPlayTimer);
+                        isAutoPlay = false;
+                        updateAutoPlayUI();
+                    } else {
+                        navigateDialogue(1);
+                    }
+                }, 4000);
+            } else {
+                if (autoPlayTimer) clearInterval(autoPlayTimer);
+            }
+        }
+
+        function updateAutoPlayUI() {
+            const icon = document.getElementById('autoplay-icon');
+            const btn = document.getElementById('autoplay-btn');
+
+            if (isAutoPlay) {
+                icon.className = 'fa-solid fa-pause';
+                btn.className = 'bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 animate-pulse';
+            } else {
+                icon.className = 'fa-solid fa-play';
+                btn.className = 'bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5';
+            }
+        }
+
+        function finishDialogue() {
+            if (activeDialogueId === 1) addStars(2);
+            else addHearts(2);
+
+            document.getElementById('final-stars').innerText = `⭐ ${starsCount}`;
+            document.getElementById('final-hearts').innerText = `💖 ${heartsCount}`;
+
+            showScreen('victory');
+            playTone('win');
+
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+        }
+
+        function startQuizMode() {
+            quizIdx = 0;
+            quizScore = 0;
+            showScreen('quiz');
+            renderQuizQuestion();
+        }
+
+        function renderQuizQuestion() {
+            const q = quizQuestions[quizIdx];
+            document.getElementById('quiz-step-text').innerText = `Reto ${quizIdx + 1} de ${quizQuestions.length}`;
+            document.getElementById('quiz-sentence').innerText = `"${q.sentence}"`;
+            document.getElementById('quiz-translation').innerText = q.translation;
+
+            const feedback = document.getElementById('quiz-feedback-box');
+            feedback.classList.add('hidden');
+            document.getElementById('quiz-next-btn').classList.add('hidden');
+
+            const container = document.getElementById('quiz-answers-grid');
+            container.innerHTML = '';
+
+            const shuffledOpts = [...q.options].sort(() => Math.random() - 0.5);
+
+            shuffledOpts.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-3d bg-white hover:bg-emerald-50 text-slate-800 font-extrabold p-4 rounded-2xl border-2 border-slate-200 text-center text-base sm:text-lg flex justify-between items-center transition';
+                btn.innerHTML = `<span>${opt.text}</span> <i class="fa-regular fa-circle text-slate-300"></i>`;
+                btn.onclick = () => selectQuizAnswer(btn, opt.correct, opt.text);
+                container.appendChild(btn);
+            });
+        }
+
+        function selectQuizAnswer(btn, isCorrect, word) {
+            const allBtns = document.querySelectorAll('#quiz-answers-grid button');
+            allBtns.forEach(b => b.disabled = true);
+
+            const feedback = document.getElementById('quiz-feedback-box');
+
+            if (isCorrect) {
+                quizScore++;
+                addStars(1);
+                btn.className = 'btn-3d bg-emerald-500 text-white font-extrabold p-4 rounded-2xl border-2 border-emerald-600 text-center text-base sm:text-lg flex justify-between items-center';
+                btn.innerHTML += ' <i class="fa-solid fa-circle-check text-xl"></i>';
+
+                feedback.innerText = `🎉 ¡Correcto! "${word}" completa la frase con respeto.`;
+                feedback.className = 'p-3.5 rounded-2xl text-center font-bold text-sm sm:text-base bg-emerald-100 text-emerald-800 border-2 border-emerald-300 animate-popIn';
+                speakText(word, 'Floppy');
+            } else {
+                playTone('wrong');
+                btn.className = 'btn-3d bg-rose-500 text-white font-extrabold p-4 rounded-2xl border-2 border-rose-600 text-center text-base sm:text-lg flex justify-between items-center';
+                btn.innerHTML += ' <i class="fa-solid fa-circle-xmark text-xl"></i>';
+
+                feedback.innerText = '💡 ¡Intenta recordar la frase del teatrito!';
+                feedback.className = 'p-3.5 rounded-2xl text-center font-bold text-sm sm:text-base bg-rose-100 text-rose-800 border-2 border-rose-300 animate-popIn';
+            }
+
+            feedback.classList.remove('hidden');
+            document.getElementById('quiz-next-btn').classList.remove('hidden');
+        }
+
+        function nextQuizQuestion() {
+            quizIdx++;
+            if (quizIdx < quizQuestions.length) {
+                renderQuizQuestion();
+            } else {
+                finishDialogue();
+            }
+        }
+
+        // Initialize user interaction listener
+        window.addEventListener('click', () => {
+            initAudio();
+        }, { once: true });
+    </script>
+</body>
+</html>
